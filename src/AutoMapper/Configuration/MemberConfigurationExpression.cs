@@ -329,6 +329,10 @@ namespace AutoMapper.Configuration
             {
                 action(propertyMap);
             }
+            if (!propertyMap.Ignored)
+            {
+                propertyMap.AfterConfiguration();
+            }
         }
 
         public LambdaExpression SourceExpression { get; private set; }

@@ -97,7 +97,8 @@ namespace AutoMapper
         internal void DecrementTypeDepth(TypePair types) => TypeDepth[types]--;
         internal int GetTypeDepth(TypePair types) => TypeDepth.TryGetValue(types, out int depth) ? depth : TypeDepth[types] = 1;
         internal bool IsDefault => this == _inner.DefaultContext;
-        internal TDestination Map<TSource, TDestination>(TSource source, TDestination destination, IMemberMap memberMap)
+        internal ResolutionContext New() => new ResolutionContext(_inner);
+        internal TDestination MapInternal<TSource, TDestination>(TSource source, TDestination destination, IMemberMap memberMap)
             => _inner.Map(source, destination, this, memberMap: memberMap);
         internal object Map(object source, object destination, Type sourceType, Type destinationType, IMemberMap memberMap)
             => _inner.Map(source, destination, this, sourceType, destinationType, memberMap);

@@ -89,16 +89,14 @@ namespace AutoMapper
                 _openTypeMapConfigs = new Dictionary<TypePair, ITypeMapConfiguration>(profile.OpenTypeMapConfigs.Count);
                 foreach (var openTypeMapConfig in profile.OpenTypeMapConfigs)
                 {
-                    AddOpenTypeMapConfig(openTypeMapConfig);
+                    _openTypeMapConfigs.Add(openTypeMapConfig.Types, openTypeMapConfig);
                     var reverseMap = openTypeMapConfig.ReverseTypeMap;
                     if (reverseMap != null)
                     {
-                        AddOpenTypeMapConfig(reverseMap);
+                        _openTypeMapConfigs.Add(reverseMap.Types, reverseMap);
                     }
                 }
             }
-            void AddOpenTypeMapConfig(ITypeMapConfiguration typeMapConfiguration) => 
-                _openTypeMapConfigs.Add(typeMapConfiguration.Types, typeMapConfiguration);
         }
         public int TypeMapsCount { get; private set; }
         internal void Clear()
@@ -257,6 +255,10 @@ namespace AutoMapper
 
         private void ApplyMemberMaps(TypeMap currentMap, IGlobalConfiguration configurationProvider)
         {
+            if (!currentMap.HasIncludedMembers)
+            {
+                return;
+            }
             foreach (var includedMemberExpression in currentMap.GetAllIncludedMembers())
             {
                 var includedMap = configurationProvider.GetIncludedTypeMap(includedMemberExpression.Body.Type, currentMap.DestinationType);
@@ -274,7 +276,7 @@ namespace AutoMapper
 
         private void ApplyDerivedMaps(TypeMap baseMap, TypeMap typeMap, IGlobalConfiguration configurationProvider)
         {
-            foreach (var derivedMap in configurationProvider.GetIncludedTypeMaps(typeMap.IncludedDerivedTypes))
+            foreach (var derivedMap in configurationProvider.GetIncludedTypeMaps(typeMap))
             {
                 derivedMap.IncludeBaseTypes(typeMap.Types);
                 derivedMap.AddInheritedMap(baseMap);

@@ -309,7 +309,7 @@ namespace AutoMapper
 
         private IEnumerable<TypeMap> GetDerivedTypeMaps(TypeMap typeMap)
         {
-            foreach (var derivedMap in this.Internal().GetIncludedTypeMaps(typeMap.IncludedDerivedTypes))
+            foreach (var derivedMap in this.Internal().GetIncludedTypeMaps(typeMap))
             {
                 yield return derivedMap;
                 foreach (var derivedTypeMap in GetDerivedTypeMaps(derivedMap))

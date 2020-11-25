@@ -15,25 +15,19 @@ namespace AutoMapper
     {
         private MemberInfo[] _memberChain = Array.Empty<MemberInfo>();
         private List<ValueTransformerConfiguration> _valueTransformerConfigs;
-
         public PropertyMap(MemberInfo destinationMember, TypeMap typeMap)
         {
             TypeMap = typeMap;
             DestinationMember = destinationMember;
         }
-
         public PropertyMap(PropertyMap inheritedMappedProperty, TypeMap typeMap)
             : this(inheritedMappedProperty.DestinationMember, typeMap) => ApplyInheritedPropertyMap(inheritedMappedProperty);
-
         public PropertyMap(PropertyMap includedMemberMap, TypeMap typeMap, IncludedMember includedMember)
             : this(includedMemberMap, typeMap) => IncludedMember = includedMember.Chain(includedMemberMap.IncludedMember);
-
         public override TypeMap TypeMap { get; }
         public MemberInfo DestinationMember { get; }
         public override string DestinationName => DestinationMember.Name;
-
         public override Type DestinationType => DestinationMember.GetMemberType();
-
         public override IReadOnlyCollection<MemberInfo> SourceMembers => _memberChain;
         public override IncludedMember IncludedMember { get; }
         public override bool Inline { get; set; } = true;
@@ -51,15 +45,12 @@ namespace AutoMapper
         public override ValueResolverConfiguration ValueResolverConfig { get; set; }
         public override ValueConverterConfiguration ValueConverterConfig { get; set; }
         public override IReadOnlyCollection<ValueTransformerConfiguration> ValueTransformers => _valueTransformerConfigs ?? (IReadOnlyCollection<ValueTransformerConfiguration>)Array.Empty<ValueTransformerConfiguration>();
-
-        public override Type SourceType => ValueConverterConfig?.SourceMember?.ReturnType
-                                  ?? ValueResolverConfig?.SourceMember?.ReturnType
-                                  ?? CustomMapFunction?.ReturnType
-                                  ?? CustomMapExpression?.ReturnType
-                                  ?? SourceMember?.GetMemberType();
-
-        public void ChainMembers(IEnumerable<MemberInfo> members) => _memberChain = members.ToArray();
-
+        public override Type SourceType { get; protected set; } = typeof(object);
+        public void ChainMembers(IEnumerable<MemberInfo> members)
+        {
+            _memberChain = members.ToArray();
+            SourceType = _memberChain[_memberChain.Length - 1].GetMemberType();
+        }
         public void ApplyInheritedPropertyMap(PropertyMap inheritedMappedProperty)
         {
             if(inheritedMappedProperty.Ignored && !IsResolveConfigured)
@@ -68,6 +59,8 @@ namespace AutoMapper
             }
             if (!IsResolveConfigured)
             {
+                IsResolveConfigured = inheritedMappedProperty.IsResolveConfigured;
+                SourceType = inheritedMappedProperty.SourceType;
                 CustomMapExpression = inheritedMappedProperty.CustomMapExpression;
                 CustomMapFunction = inheritedMappedProperty.CustomMapFunction;
                 ValueResolverConfig = inheritedMappedProperty.ValueResolverConfig;
@@ -87,18 +80,26 @@ namespace AutoMapper
             }
             _memberChain = _memberChain.Length == 0 ? inheritedMappedProperty._memberChain : _memberChain;
         }
-
-        public override bool CanResolveValue => HasSource && !Ignored;
-
+        public override bool CanResolveValue => !Ignored && HasSource;
         public bool HasSource => _memberChain.Length > 0 || IsResolveConfigured;
-
-        public bool IsResolveConfigured => ValueResolverConfig != null || CustomMapFunction != null ||
-                                         CustomMapExpression != null || ValueConverterConfig != null;
-
+        public bool IsResolveConfigured { get; private set; }
         public void AddValueTransformation(ValueTransformerConfiguration valueTransformerConfiguration)
         {
             _valueTransformerConfigs ??= new();
             _valueTransformerConfigs.Add(valueTransformerConfiguration);
+        }
+        internal void AfterConfiguration()
+        {
+            IsResolveConfigured = (ValueResolverConfig ?? CustomMapFunction ?? CustomMapExpression ?? (object)ValueConverterConfig) != null;
+            if (IsResolveConfigured)
+            {
+                SourceType =
+                            ValueConverterConfig?.SourceMember?.ReturnType ??
+                            ValueResolverConfig?.SourceMember?.ReturnType ??
+                            CustomMapFunction?.ReturnType ??
+                            CustomMapExpression?.ReturnType ??
+                            SourceType;
+            }
         }
     }
 }

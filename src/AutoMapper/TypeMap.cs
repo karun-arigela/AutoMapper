@@ -100,8 +100,6 @@ namespace AutoMapper
         public IReadOnlyCollection<ValueTransformerConfiguration> ValueTransformers => _valueTransformerConfigs ?? (IReadOnlyCollection<ValueTransformerConfiguration>)Array.Empty<ValueTransformerConfiguration>();
 
         public bool PreserveReferences { get; set; }
-        public LambdaExpression Condition { get; set; }
-
         public int MaxDepth { get; set; }
 
         public Type TypeConverterType { get; set; }
@@ -109,7 +107,22 @@ namespace AutoMapper
 
         public IReadOnlyCollection<PropertyMap> PropertyMaps => _orderedPropertyMaps ?? (IReadOnlyCollection<PropertyMap>)_propertyMaps.Values;
         public IReadOnlyCollection<PathMap> PathMaps => _pathMaps?.Values ?? (IReadOnlyCollection<PathMap>)Array.Empty<PathMap>();
-        public IEnumerable<IMemberMap> MemberMaps => PropertyMaps.Cast<IMemberMap>().Concat(PathMaps).Concat(GetConstructorMemberMaps());
+        public IEnumerable<IMemberMap> MemberMaps
+        {
+            get
+            {
+                IEnumerable<IMemberMap> maps = PropertyMaps;
+                if (_pathMaps != null)
+                {
+                    maps = maps.Concat(_pathMaps.Values);
+                }
+                if (IsConstructorMapping)
+                {
+                    maps = maps.Concat(ConstructorMap.CtorParams);
+                }
+                return maps;
+            }
+        }
 
         public bool? IsValid { get; set; }
         internal bool WasInlineChecked { get; set; }
@@ -154,6 +167,8 @@ namespace AutoMapper
         public Type MakeGenericType(Type type) => type.IsGenericTypeDefinition ?
             type.MakeGenericType(SourceType.GenericTypeArguments.Concat(DestinationType.GenericTypeArguments).Take(type.GetGenericParameters().Length).ToArray()) :
             type;
+
+        public bool HasIncludedMembers => IncludedMembers.Length > 0 || IncludedMembersNames.Length > 0;
 
         public IEnumerable<LambdaExpression> GetAllIncludedMembers() => IncludedMembers.Concat(GetUntypedIncludedMembers());
 
@@ -417,10 +432,13 @@ namespace AutoMapper
 
         private void ApplyInheritedTypeMap(TypeMap inheritedTypeMap)
         {
-            foreach (var inheritedMappedProperty in inheritedTypeMap.PropertyMaps.Where(m => m.IsMapped))
+            foreach (var inheritedMappedProperty in inheritedTypeMap.PropertyMaps)
             {
+                if (!inheritedMappedProperty.IsMapped)
+                {
+                    continue;
+                }
                 var conventionPropertyMap = GetPropertyMap(inheritedMappedProperty);
-
                 if (conventionPropertyMap != null)
                 {
                     conventionPropertyMap.ApplyInheritedPropertyMap(inheritedMappedProperty);
@@ -492,7 +510,5 @@ namespace AutoMapper
             typeMap._inheritedTypeMaps ??= new();
             typeMap._inheritedTypeMaps.UnionWith(_inheritedTypeMaps);
         }
-
-        private IEnumerable<IMemberMap> GetConstructorMemberMaps() => IsConstructorMapping ? ConstructorMap.CtorParams : Enumerable.Empty<IMemberMap>();
     }
 }

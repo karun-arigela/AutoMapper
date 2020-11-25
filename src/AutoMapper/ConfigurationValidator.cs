@@ -145,15 +145,12 @@ namespace AutoMapper.Internal
                 {
                     continue;
                 }
-
                 var sourceType = memberMap.SourceType;
-
-                if (sourceType == null) continue;
-
                 // when we don't know what the source type is, bail
-                if (sourceType.IsGenericParameter || sourceType == typeof (object))
+                if (sourceType.IsGenericParameter || sourceType == typeof(object))
+                {
                     return;
-
+                }
                 var destinationType = memberMap.DestinationType;
                 DryRunTypeMap(typeMapsChecked, new TypePair(sourceType, destinationType), null, memberMap);
             }

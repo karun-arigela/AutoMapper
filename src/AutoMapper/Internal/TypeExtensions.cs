@@ -25,7 +25,7 @@ namespace AutoMapper.Internal
 
         public static bool IsNonStringEnumerable(this Type type) => type != typeof(string) && type.IsEnumerableType();
 
-        public static bool IsSetType(this Type type) => type.ImplementsGenericInterface(typeof(ISet<>));
+        public static bool IsSetType(this Type type) => type.IsGenericType(typeof(ISet<>)) || type.IsGenericType(typeof(HashSet<>));
 
         public static IEnumerable<Type> BaseClassesAndInterfaces(this Type type)
         {

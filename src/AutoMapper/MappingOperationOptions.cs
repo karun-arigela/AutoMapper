@@ -8,7 +8,7 @@ namespace AutoMapper
     public class MappingOperationOptions<TSource, TDestination> : IMappingOperationOptions<TSource, TDestination>
     {
         private StringDictionary _items;
-        private static readonly Action<TSource, TDestination> Empty = (_, __) => { };
+        private static readonly Action<TSource, TDestination> Empty = (_, _) => { };
 
         public MappingOperationOptions(Func<Type, object> serviceCtor)
         {
@@ -17,7 +17,7 @@ namespace AutoMapper
         }
 
         public Func<Type, object> ServiceCtor { get; private set; }
-        public IDictionary<string, object> Items => _items ?? (_items = new StringDictionary());
+        public IDictionary<string, object> Items => _items ??= new StringDictionary();
         public Action<TSource, TDestination> BeforeMapAction { get; protected set; }
         public Action<TSource, TDestination> AfterMapAction { get; protected set; }
 

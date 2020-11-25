@@ -21,13 +21,13 @@ namespace AutoMapper
         public static readonly IMemberMap Instance = new DefaultMemberMap();
 
         public virtual TypeMap TypeMap => default;
-        public virtual Type SourceType => default;
+        public virtual Type SourceType { get => default; protected set { } }
         public virtual IReadOnlyCollection<MemberInfo> SourceMembers => Array.Empty<MemberInfo>();
         public virtual IncludedMember IncludedMember => default;
         public virtual string DestinationName => default;
         public virtual Type DestinationType => default;
         public virtual TypePair Types => new TypePair(SourceType, DestinationType);
-        public virtual bool CanResolveValue { get => default; set { } }
+        public virtual bool CanResolveValue { get => default; protected set { } }
         public virtual bool IsMapped => Ignored || CanResolveValue;
         public virtual bool Ignored { get => default; set { } }
         public virtual bool Inline { get => true; set { } }

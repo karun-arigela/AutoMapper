@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using AutoMapper.Configuration;
 using AutoMapper.Configuration.Conventions;
 using AutoMapper.Internal;
@@ -124,6 +125,6 @@ namespace AutoMapper
             return condition;
         }
         public void IncludeSourceExtensionMethods(Type type) => _sourceExtensionMethods.AddRange(
-            type.GetMethods(TypeExtensions.StaticFlags).Where(m => m.GetParameters().Length == 1 && m.IsExtensionMethod()));
+            type.GetMethods(TypeExtensions.StaticFlags).Where(m => m.GetParameters().Length == 1 && m.Has<ExtensionAttribute>()));
     }
 }

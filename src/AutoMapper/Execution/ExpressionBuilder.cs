@@ -18,8 +18,8 @@ namespace AutoMapper.Execution
         public static readonly MethodInfo GetTypeDepthMethod = typeof(ResolutionContext).GetMethod(nameof(ResolutionContext.GetTypeDepth), TypeExtensions.InstanceFlags);
         public static readonly MethodInfo CacheDestinationMethod = typeof(ResolutionContext).GetMethod(nameof(ResolutionContext.CacheDestination), TypeExtensions.InstanceFlags);
         public static readonly MethodInfo GetDestinationMethod = typeof(ResolutionContext).GetMethod(nameof(ResolutionContext.GetDestination), TypeExtensions.InstanceFlags);
-        public static readonly ConstructorInfo CreateContext = typeof(ResolutionContext).GetConstructor(TypeExtensions.InstanceFlags, null, new[] { typeof(IInternalRuntimeMapper) }, null);
-        public static readonly MethodInfo ContextMapMethod = Method(()=> default(ResolutionContext).Map<object, object>(null, null, null)).GetGenericMethodDefinition();
+        private static readonly MethodInfo CreateContext = typeof(ResolutionContext).GetMethod(nameof(ResolutionContext.New), TypeExtensions.InstanceFlags);
+        private static readonly MethodInfo ContextMapMethod = typeof(ResolutionContext).GetMethod(nameof(ResolutionContext.MapInternal), TypeExtensions.InstanceFlags).GetGenericMethodDefinition();
 
         public static Expression MapExpression(IGlobalConfiguration configurationProvider,
             ProfileMap profileMap,
@@ -100,7 +100,7 @@ namespace AutoMapper.Execution
                     var destinationElementType = destinationType.GetElementType();
                     return NewArrayBounds(destinationElementType, Enumerable.Repeat(Constant(0), destinationType.GetArrayRank()));
                 }
-                return ObjectFactory.GenerateNonNullConstructorExpression(destinationType);
+                return ObjectFactory.GenerateConstructorExpression(destinationType);
             }
         }
 
@@ -129,8 +129,7 @@ namespace AutoMapper.Execution
         {
             if (typeMap.MaxDepth > 0 || typeMap.PreserveReferences)
             {
-                var mapper = Property(context, "Mapper");
-                return IfThen(Property(context, "IsDefault"), Assign(context, New(CreateContext, Convert(mapper, typeof(IInternalRuntimeMapper)))));
+                return IfThen(Property(context, "IsDefault"), Assign(context, Call(context, CreateContext)));
             }
             return null;
         }
